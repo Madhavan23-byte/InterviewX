@@ -1,11 +1,11 @@
-import json
+﻿import json
 import os
 import uuid
 import copy
 from typing import Dict, Any, List, Optional
 import pymongo
 from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure
+from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, ConfigurationError
 from config import settings
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -42,7 +42,6 @@ class LocalCollection:
                     return False
                 continue
             if isinstance(v, dict):
-                # Simple operator support
                 doc_val = doc.get(k)
                 if "$in" in v:
                     if doc_val not in v["$in"]:
@@ -118,7 +117,6 @@ class LocalCollection:
                         doc[k].append(copy.deepcopy(v))
                     modified += 1
                 else:
-                    # direct update
                     for k, v in update.items():
                         doc[k] = copy.deepcopy(v)
                     modified += 1
@@ -173,21 +171,28 @@ class DatabaseManager:
         self.client: Optional[MongoClient] = None
         self.db = None
         self.is_mongo = False
+        self.engine_name = "PersistentDocumentStore"
         self.local_store = LocalDocumentStore(STORE_FILE)
         self.init_connection()
 
     def init_connection(self):
+        is_atlas = "mongodb+srv://" in settings.MONGO_URI or "mongodb.net" in settings.MONGO_URI
+        target_name = "MongoDB Atlas" if is_atlas else "MongoDB"
         try:
-            print(f"[DB] Checking MongoDB connection at {settings.MONGO_URI}...")
-            client = MongoClient(settings.MONGO_URI, serverSelectionTimeoutMS=1500)
+            # Mask credentials when logging
+            masked_uri = settings.MONGO_URI.split("@")[-1] if "@" in settings.MONGO_URI else settings.MONGO_URI
+            print(f"[DB] Connecting to {target_name} at {masked_uri}...")
+            client = MongoClient(settings.MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
             client.admin.command('ping')
             self.client = client
             self.db = client[settings.DB_NAME]
             self.is_mongo = True
-            print("[DB] Connected successfully to MongoDB server.")
-        except (ServerSelectionTimeoutError, ConnectionFailure, Exception) as e:
-            print(f"[DB] MongoDB server unavailable ({e}). Using persistent local document store at {STORE_FILE}.")
+            self.engine_name = target_name
+            print(f"[DB] Connected successfully to {target_name}.")
+        except (ServerSelectionTimeoutError, ConnectionFailure, ConfigurationError, Exception) as e:
+            print(f"[DB] {target_name} unavailable ({type(e).__name__}). Using persistent local document store at {STORE_FILE}.")
             self.is_mongo = False
+            self.engine_name = "PersistentDocumentStore"
             self.db = self.local_store
 
     def get_collection(self, name: str):
@@ -195,7 +200,7 @@ class DatabaseManager:
 
     def status(self) -> dict:
         return {
-            "engine": "MongoDB" if self.is_mongo else "PersistentDocumentStore",
+            "engine": self.engine_name,
             "connected": True,
             "storage_path": None if self.is_mongo else STORE_FILE
         }

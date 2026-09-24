@@ -1,8 +1,18 @@
-import axios from 'axios';
+﻿import axios from 'axios';
+
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    const cleanUrl = envUrl.trim().replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  }
+  // Default to relative /api in production if served on same domain/proxy, or localhost in dev
+  return import.meta.env.PROD ? '/api' : 'http://127.0.0.1:8000/api';
+};
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
-  timeout: 15000,
+  baseURL: getBaseUrl(),
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
   },

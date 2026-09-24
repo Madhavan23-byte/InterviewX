@@ -1,0 +1,46 @@
+﻿services:
+  # ----------------------------------------------------
+  # 1. Backend Web Service (FastAPI + Python)
+  # ----------------------------------------------------
+  - type: web
+    name: interviewx-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: DB_NAME
+        value: interviewx
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # ----------------------------------------------------
+  # 2. Frontend Static Site (React + Vite)
+  # ----------------------------------------------------
+  - type: web
+    name: interviewx-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: interviewx-api
+          property: host

@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Request
+﻿from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import time
+import os
 
 from config import settings
 from database import db_manager
@@ -18,10 +19,10 @@ from routers.ai_router import router as ai_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Seed database with mock drives, questions, demo accounts
-    print(f"[{settings.PROJECT_NAME}] Starting up backend v{settings.VERSION}...")
+    print(f"[{settings.PROJECT_NAME}] Starting up backend v{settings.VERSION} on {settings.HOST}:{settings.PORT}...")
     try:
         seed_database()
-        print(f"[{settings.PROJECT_NAME}] Seed verification completed.")
+        print(f"[{settings.PROJECT_NAME}] Database seed verification completed.")
     except Exception as e:
         print(f"[{settings.PROJECT_NAME}] Error during startup seeding: {e}")
     yield
@@ -65,7 +66,8 @@ def root():
         "name": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "status": "online",
-        "docs_url": "/docs"
+        "docs_url": "/docs",
+        "health_url": f"{settings.API_PREFIX}/health"
     }
 
 @app.get("/api/health")
@@ -76,9 +78,10 @@ def health_check():
         "timestamp": int(time.time()),
         "database": db_stat,
         "ai_engine": "Gemini API (with heuristic fallback)" if settings.GEMINI_API_KEY else "Deterministic Intelligent Fallback",
-        "project": settings.PROJECT_NAME
+        "project": settings.PROJECT_NAME,
+        "environment": "production" if os.getenv("RENDER") or os.getenv("VERCEL") else "development"
     }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
