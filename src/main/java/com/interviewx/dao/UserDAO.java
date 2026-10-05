@@ -10,13 +10,18 @@ import com.interviewx.util.DBConnection;
 
 public class UserDAO {
 
+    private String lastError = null;
+
+    public String getLastError() {
+        return lastError;
+    }
 
     // =====================================================
     // CHECK WHETHER EMAIL ALREADY EXISTS
     // =====================================================
 
     public boolean emailExists(String email) {
-
+        lastError = null;
         String sql =
             "SELECT user_id " +
             "FROM users " +
@@ -41,9 +46,8 @@ public class UserDAO {
             }
 
         } catch (SQLException e) {
-
+            lastError = e.getMessage();
             e.printStackTrace();
-
             return false;
         }
     }
@@ -54,7 +58,7 @@ public class UserDAO {
     // =====================================================
 
     public boolean createUser(User user) {
-
+        lastError = null;
         String sql =
             "INSERT INTO users " +
             "(full_name, email, password_hash, role) " +
@@ -88,27 +92,22 @@ public class UserDAO {
                 user.getRole()
             );
 
-
             int rowsInserted =
                 statement.executeUpdate();
-
 
             System.out.println(
                 "USER INSERT RESULT = "
                 + rowsInserted
             );
 
-
             return rowsInserted > 0;
 
         } catch (SQLException e) {
-
+            lastError = e.getMessage();
             System.out.println(
-                "USER INSERT FAILED"
+                "USER INSERT FAILED: " + e.getMessage()
             );
-
             e.printStackTrace();
-
             return false;
         }
     }
@@ -119,7 +118,7 @@ public class UserDAO {
     // =====================================================
 
     public User findByEmail(String email) {
-
+        lastError = null;
         String sql =
             "SELECT user_id, " +
             "full_name, " +
@@ -184,7 +183,7 @@ public class UserDAO {
             }
 
         } catch (SQLException e) {
-
+            lastError = e.getMessage();
             e.printStackTrace();
         }
 

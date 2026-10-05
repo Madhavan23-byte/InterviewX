@@ -55,6 +55,11 @@ public class UserService {
             return "An account with this email already exists.";
         }
 
+        // Check if emailExists encountered a database connectivity error
+        if (userDAO.getLastError() != null) {
+            return "Database connection failed. Please ensure the database is running and configured (" + userDAO.getLastError() + ").";
+        }
+
         // Hash password (SHA-256)
         String passwordHash = hashPassword(password);
         if (passwordHash == null) {
@@ -74,6 +79,11 @@ public class UserService {
                 studentDAO.createStudentProfile(savedUser.getUserId());
             }
             return "SUCCESS";
+        }
+
+        // Check if createUser failed due to database connectivity
+        if (userDAO.getLastError() != null) {
+            return "Database connection failed (" + userDAO.getLastError() + ").";
         }
 
         return "Registration failed. Please try again.";

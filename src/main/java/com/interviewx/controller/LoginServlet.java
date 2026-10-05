@@ -68,8 +68,13 @@ public class LoginServlet extends HttpServlet {
         email = email.trim().toLowerCase();
 
         User user = userDAO.findByEmail(email);
+
         if (user == null) {
-            request.setAttribute("error", "Invalid email or password.");
+            if (userDAO.getLastError() != null) {
+                request.setAttribute("error", "Database connection failed (" + userDAO.getLastError() + ").");
+            } else {
+                request.setAttribute("error", "Invalid email or password.");
+            }
             request.getRequestDispatcher("/login.jsp").forward(request, response);
             return;
         }
@@ -89,12 +94,16 @@ public class LoginServlet extends HttpServlet {
         session.setAttribute("role", user.getRole());
 
         // Initialize Active Preparation Profile context
-        PreparationProfile activeProfile = profileDAO.getActiveProfile(user.getUserId());
-        if (activeProfile != null) {
-            session.setAttribute("activeProfileId", activeProfile.getProfileId());
-            session.setAttribute("activeProfileRole", activeProfile.getTargetRole());
-            session.setAttribute("activeProfileTrackId", activeProfile.getTrackId());
-            session.setAttribute("activeProfile", activeProfile);
+        try {
+            PreparationProfile activeProfile = profileDAO.getActiveProfile(user.getUserId());
+            if (activeProfile != null) {
+                session.setAttribute("activeProfileId", activeProfile.getProfileId());
+                session.setAttribute("activeProfileRole", activeProfile.getTargetRole());
+                session.setAttribute("activeProfileTrackId", activeProfile.getTrackId());
+                session.setAttribute("activeProfile", activeProfile);
+            }
+        } catch (Exception e) {
+            System.out.println("Warning: Could not load active profile on login: " + e.getMessage());
         }
 
         session.setMaxInactiveInterval(30 * 60);
