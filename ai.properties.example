@@ -1,0 +1,14 @@
+# ==============================================================
+# INTERVIEWX ? AI CONFIGURATION EXAMPLE FILE
+# ==============================================================
+# Copy this file to:
+#   <user.home>/InterviewX-config/ai.properties
+# (e.g. C:\Users\<username>\InterviewX-config\ai.properties)
+#
+# DO NOT COMMIT REAL API KEYS TO VERSION CONTROL.
+# Each AI module uses a separate Gemini API key.
+# ==============================================================
+
+INTERVIEW_AI_GEMINI_API_KEY=
+CODE_ANALYZER_GEMINI_API_KEY=
+RESUME_ANALYZER_GEMINI_API_KEY=

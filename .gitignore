@@ -1,0 +1,22 @@
+# ==============================================================
+# INTERVIEWX ? GITIGNORE
+# ==============================================================
+
+# AI Secrets & External Configuration
+ai.properties
+*.secret.properties
+InterviewX-config/
+InterviewX-config/*
+*.properties.local
+
+# Build artifacts & compiled classes
+build/
+bin/
+*.class
+*.war
+src/main/webapp/WEB-INF/classes/
+
+# Logs & temp files
+*.log
+scratch/
+temp/
